@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Люблю тебя Машенька</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f7f7f7;
+        }
+
+        h1 {
+            color: #ff3366;
+        }
+
+        .button-container {
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            border: none;
+            background-color: #ff3366;
+            color: white;
+            border-radius: 5px;
+        }
+
+        button:disabled {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Люблю тебя Машенька</h1>
+    <h2>Сегодня я хочу...</h2>
+
+    <div class="button-container">
+        <button id="massage">Массаж</button>
+        <button id="breakfast">Завтрак в постель</button>
+        <button id="games">Играть в настольные игры</button>
+        <button id="mcdonalds">Доставка Макдональдс</button>
+        <button id="sushi">Доставка суши</button>
+        <button id="pasta">Паста на ужин</button>
+        <button id="kiss">Поцелуй</button>
+    </div>
+
+    <script>
+        const maxKisses = 50;
+        let kissCount = localStorage.getItem('kissCount') ? parseInt(localStorage.getItem('kissCount')) : 0;
+
+        // Функция для блокировки кнопки "Поцелуй" после 50 нажатий
+        function checkKissButtonState() {
+            const kissButton = document.getElementById('kiss');
+            if (kissCount >= maxKisses) {
+                kissButton.disabled = true;
+                alert('Кнопка "Поцелуй" заблокирована после 50 нажатий!');
+            } else {
+                kissButton.disabled = false;
+            }
+        }
+
+        // Функция для отправки уведомлений в Telegram
+        function sendTelegramNotification(buttonText) {
+            const token = '8166934526:AAFWGE2BRhGEU4lgHwa9T0oN4IjP11rzL7U'; // Заменить на токен вашего бота
+            const chatId = '171102228'; // Заменить на ваш chat_id
+            const message = `Кнопка "${buttonText}" была нажата!`;
+
+            fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        console.log('Сообщение отправлено в Telegram');
+                    } else {
+                        console.log('Ошибка отправки сообщения', data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка сети:', error);
+                });
+        }
+
+        // Сохраняем состояние кнопок в localStorage
+        const buttonsState = {
+            massage: localStorage.getItem('massage') === 'disabled',
+            breakfast: localStorage.getItem('breakfast') === 'disabled',
+            games: localStorage.getItem('games') === 'disabled',
+            mcdonalds: localStorage.getItem('mcdonalds') === 'disabled',
+            sushi: localStorage.getItem('sushi') === 'disabled',
+            pasta: localStorage.getItem('pasta') === 'disabled',
+            kiss: kissCount >= maxKisses, // Проверяем, должна ли кнопка "Поцелуй" быть заблокирована
+        };
+
+        // Блокируем все кнопки, кроме "Поцелуй", если они уже нажаты
+        Object.keys(buttonsState).forEach(buttonId => {
+            const button = document.getElementById(buttonId);
+            if (buttonsState[buttonId]) {
+                button.disabled = true;
+            }
+        });
+
+        // Обработка нажатия на кнопки
+        function handleButtonClick(buttonId) {
+            const button = document.getElementById(buttonId);
+            button.disabled = true;
+            localStorage.setItem(buttonId, 'disabled');
+            alert(`Ты выбрал "${button.innerText}"!`);
+
+            // Отправляем уведомление в Telegram
+            sendTelegramNotification(button.innerText);
+
+            // Увеличиваем счётчик только при нажатии кнопки "Поцелуй"
+            if (buttonId === 'kiss') {
+                kissCount++;
+                localStorage.setItem('kissCount', kissCount);
+                checkKissButtonState(); // Проверяем и обновляем состояние кнопки "Поцелуй"
+            }
+        }
+
+        document.getElementById('massage').addEventListener('click', () => handleButtonClick('massage'));
+        document.getElementById('breakfast').addEventListener('click', () => handleButtonClick('breakfast'));
+        document.getElementById('games').addEventListener('click', () => handleButtonClick('games'));
+        document.getElementById('mcdonalds').addEventListener('click', () => handleButtonClick('mcdonalds'));
+        document.getElementById('sushi').addEventListener('click', () => handleButtonClick('sushi'));
+        document.getElementById('pasta').addEventListener('click', () => handleButtonClick('pasta'));
+        document.getElementById('kiss').addEventListener('click', () => handleButtonClick('kiss'));
+
+        // Пытаемся сразу обновить кнопку "Поцелуй" при загрузке
+        checkKissButtonState();
+    </script>
+
+</body>
+</html>
